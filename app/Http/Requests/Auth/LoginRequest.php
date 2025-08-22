@@ -27,7 +27,8 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['required', 'string', 'email'],
+            // allow phone or email in the same field; we'll resolve it during authenticate()
+            'email' => ['required', 'string'],
             'password' => ['required', 'string'],
         ];
     }
@@ -41,13 +42,35 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
-            RateLimiter::hit($this->throttleKey());
+        $credentials = ['email' => $this->input('email'), 'password' => $this->input('password')];
 
-            throw ValidationException::withMessages([
-                'email' => trans('auth.failed'),
-            ]);
+        // First, try direct attempt assuming user provided an email
+        if (Auth::attempt($credentials, $this->boolean('remember'))) {
+            RateLimiter::clear($this->throttleKey());
+            return;
         }
+
+        // If that failed, and the input looks like a phone (digits, + or spaces), try to find a user by phone
+        $input = $this->input('email');
+        $clean = preg_replace('/\D+/', '', $input);
+
+        if ($clean) {
+            // try to find matching user profile
+            $profile = \App\Models\UserProfile::whereRaw("REPLACE(REPLACE(REPLACE(phone_number, ' ', ''), '+', ''), '-', '') LIKE ?", ["%{$clean}%"])->first();
+            if ($profile && $profile->user) {
+                $userEmail = $profile->user->email;
+                if (Auth::attempt(['email' => $userEmail, 'password' => $this->input('password')], $this->boolean('remember'))) {
+                    RateLimiter::clear($this->throttleKey());
+                    return;
+                }
+            }
+        }
+
+        RateLimiter::hit($this->throttleKey());
+
+        throw ValidationException::withMessages([
+            'email' => trans('auth.failed'),
+        ]);
 
         RateLimiter::clear($this->throttleKey());
     }

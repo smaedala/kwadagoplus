@@ -16,7 +16,8 @@ class AuthenticatedSessionController extends Controller
      */
     public function create(): View
     {
-        return view('auth.enhanced-login');
+    // Use the project's canonical login Blade provided by the user
+    return view('auth.login');
     }
 
     /**

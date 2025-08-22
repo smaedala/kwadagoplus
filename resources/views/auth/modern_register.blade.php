@@ -934,29 +934,23 @@
         // Role selection
         function selectRole(role) {
             selectedRole = role;
-
+            
             // Remove selection from both cards
             document.getElementById('seekerCard').classList.remove('selected');
             document.getElementById('providerCard').classList.remove('selected');
-
+            
             // Add selection to chosen card
             if (role === 'seeker') {
                 document.getElementById('seekerCard').classList.add('selected');
             } else {
                 document.getElementById('providerCard').classList.add('selected');
             }
-
+            
             // Enable continue button
             document.getElementById('continueBtn').disabled = false;
-
+            
             // Store selection in session storage
             sessionStorage.setItem('selectedRole', role);
-
-            // Reflect immediately in the hidden form input so single-step users also work
-            const hidden = document.getElementById('userType');
-            if (hidden) {
-                hidden.value = role === 'seeker' ? 'service_seeker' : 'service_provider';
-            }
         }
 
         // Proceed to step 2
@@ -977,9 +971,8 @@
             document.querySelectorAll('.step-indicator')[0].classList.add('completed');
             document.querySelectorAll('.step-indicator')[1].classList.add('active');
             
-            // Set user type in form (ensure server receives the role)
-            const ut = document.getElementById('userType');
-            if (ut) ut.value = selectedRole === 'seeker' ? 'service_seeker' : 'service_provider';
+            // Set user type in form
+            document.getElementById('userType').value = selectedRole === 'seeker' ? 'service_seeker' : 'service_provider';
             
             // Update form based on role
             updateFormForRole(selectedRole);
@@ -1022,17 +1015,12 @@
                 emailInput.required = true;
                 formTitle.textContent = 'Create Your Professional Profile';
                 formSubtitle.textContent = 'Tell us about your services and experience';
-                // ensure hidden input updated
-                const ut2 = document.getElementById('userType');
-                if (ut2) ut2.value = 'service_provider';
             } else {
                 providerFields.classList.add('hidden');
                 emailOptional.classList.remove('hidden');
                 emailInput.required = false;
                 formTitle.textContent = 'Create Your Account';
                 formSubtitle.textContent = 'Fill in your details to get started';
-                const ut2 = document.getElementById('userType');
-                if (ut2) ut2.value = 'service_seeker';
             }
         }
 
@@ -1390,3 +1378,4 @@
     </style>
 </body>
 </html>
+
